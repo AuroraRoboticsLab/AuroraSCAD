@@ -23,7 +23,7 @@ $fs=0.1;
 $fa=3;
 
 // Distance between gear teeth
-tooth_clearance=0.0;
+tooth_clearance=0.05;
 
 // showteeth=true: show actual gear teeth.  False: show only pitch circle.
 showteeth=true;
@@ -133,25 +133,35 @@ module gear_2D(gear) {
     [1] (S) sun gear tooth count
     [2] (P) planet gear tooth count
         (R) ring gear tooth count = S + 2*P
-    [3] planet count
+    [3] planet count (number of planet gears, such as 2 or 3 or 10)
 */
+
+// Accessors for geartype and common parameters
 function gearplane_geartype(gearplane) = gearplane[0];
 function gearplane_height(gearplane) = geartype_height(gearplane[0]);
 function gearplane_Cpitch(gearplane) = geartype_Cpitch(gearplane[0]);
 function gearplane_Dpitch(gearplane) = geartype_Dpitch(gearplane[0]);
 
+// Sun gear:
 function gearplane_Steeth(gearplane) = gearplane[1];
 function gearplane_Sgear(gearplane) = gear_create(gearplane[0],gearplane_Steeth(gearplane));
+function gearplane_Sradius(gearplane) = gear_R(gearplane_Sgear(gearplane));
 
+// Planet gear:
 function gearplane_Pteeth(gearplane) = gearplane[2];
 function gearplane_Pgear(gearplane) = gear_create(gearplane[0],gearplane_Pteeth(gearplane));
+function gearplane_Pradius(gearplane) = gear_R(gearplane_Pgear(gearplane));
 
 function gearplane_Pcount(gearplane) = gearplane[3];
-function gearplane_Pradius(gearplane) = gear_R(gearplane_Sgear(gearplane))+gear_R(gearplane_Pgear(gearplane));
 
+// Ring gear:
 function gearplane_Rteeth(gearplane) = gearplane_Steeth(gearplane)+2*gearplane_Pteeth(gearplane);
 function gearplane_Rgear(gearplane) = gear_create(gearplane[0],gearplane_Rteeth(gearplane));
 function gearplane_Rradius(gearplane) = gear_R(gearplane_Rgear(gearplane));
+
+// Oradius: radius at which planets orbit the sun
+function gearplane_Oradius(gearplane) = gearplane_Sradius(gearplane)+gear_R(gearplane_Pgear(gearplane));
+
 
 // Gear reduction ratio if ring gear is fixed, planet carrier from sun gear.
 function gearplane_ratio_Rfixed(gearplane) = (gearplane_Rteeth(gearplane) + gearplane_Steeth(gearplane)) / gearplane_Steeth(gearplane);
@@ -159,7 +169,7 @@ function gearplane_ratio_Rfixed(gearplane) = (gearplane_Rteeth(gearplane) + gear
 
 /*
  Stepped planetary gear support: a stepped planetary geartrain
- is two planetary geartrains where the planet radii match, so 
+ is two planetary geartrains where the orbit radii match, so 
  you can couple the planets together directly.  Power enters
  via the input sun gear, which spins the planets relative to the 
  fixed input ring gear.  Power leaves via the output ring gear. 
@@ -174,13 +184,13 @@ function gearplane_stepped_ratio(gearplane_in,gearplane_out) =
 
 
 /*
- Return the diametral pitch required for the planet radii of these gearplanes to match,
+ Return the diametral pitch required for the orbit radii of these gearplanes to match,
  assuming the planets have the same number of teeth, and the sun adds n teeth per planet.
  
  Rationale:
-    gearplane_Pradius(gp) = gearplane_Pradius(gearplane_out);
+    gearplane_Oradius(gp) = gearplane_Oradius(gearplane_out);
     
-    A = gearplane_Pradius(gp)
+    A = gearplane_Oradius(gp)
     B = gp[1]+n*gp[3]; // new sun gear tooth count
     C = gp[2]; // new planet gear tooth count
     p = new diametral pitch
@@ -191,7 +201,7 @@ function gearplane_stepped_ratio(gearplane_in,gearplane_out) =
     gearplane_out = [ [p, ..], B, C, gp[3] ]
 */
 function gearplane_stepped_Dpitch(gp,n=1) = (
-    gearplane_Pradius(gp)*2/
+    gearplane_Oradius(gp)*2/
     (gp[1]+n*gp[3]   +   gp[2])
 );
 
@@ -224,7 +234,7 @@ module gearplane_planets(gearplane) {
 	S=gearplane_Steeth(gearplane);
 	P=gearplane_Pteeth(gearplane);
 	nP=gearplane_Pcount(gearplane);
-	Pradius=gearplane_Pradius(gearplane);
+	Oradius=gearplane_Oradius(gearplane);
 	
 	// Planet gear positions must be a multiple of this to match ring
 	Pconstraint=360/(gearplane_Rteeth(gearplane)+gearplane_Steeth(gearplane));
@@ -235,7 +245,7 @@ module gearplane_planets(gearplane) {
 		ring=find_nearest_multiple(target,Pconstraint);
 		timing = ring/360*S;
 		rotate([0,0,ring])
-			translate([Pradius,0,0])
+			translate([Oradius,0,0])
 				rotate([0,0,360/gearplane_Pteeth(gearplane)*timing])
 					children();
 	}
@@ -285,18 +295,60 @@ module gearplane_2D(gearplane) {
 
 
 // Make a 3D gear, with beveled teeth
-module gear_3D(gear,bevel=1,height=0) 
+module gear_3D(gear,enlarge=0,bevel=1,height=0,clearance=0) 
 {
-	h=height?height:geartype_height(gear_geartype(gear));
-	intersection() {
-		hull() {
-			cylinder(d1=gear_ID(gear),d2=gear_OD(gear),h=bevel);
-			translate([0,0,h]) scale([1,1,-1])
-			cylinder(d1=gear_ID(gear),d2=gear_OD(gear),h=bevel);
-		}
-		linear_extrude(height=h,convexity=8)
-			gear_2D(gear);
+    e2=2*enlarge;
+    translate([0,0,-enlarge])
+    {
+	    h=(height?height:geartype_height(gear_geartype(gear)))+e2;
+	    intersection() {
+		    hull() {
+			    cylinder(d1=gear_ID(gear)+e2,d2=gear_OD(gear)+e2,h=bevel);
+			    translate([0,0,h]) scale([1,1,-1])
+			    cylinder(d1=gear_ID(gear)+e2,d2=gear_OD(gear)+e2,h=bevel);
+		    }
+		    linear_extrude(height=h,convexity=8)
+		        offset(r=-clearance+enlarge)
+			    gear_2D(gear);
+	    }
 	}
 }
+
+// Cut ring gear hole in a cylinder (e.g., gear_OD+2*wall diameter)
+module ring_gear_cut(ring,clearance=0.15)
+{
+    gear_3D(ring,
+        bevel=0, //< straight ends (avoids overhangs)
+        clearance=-clearance //< this is a cut, so needs to enlarge the opposite way
+    );
+}
+
+
+// Print stepped planet gears as a single piece
+module stepped_planets(gearplane_in,gearplane_out,
+    overlap=3,axle_hole=6,clearance=0,enlarge=0,bevel=1)
+{
+    difference() {
+        union() {
+            // lower gearplane
+            gearplane_planets(gearplane_in)
+                gear_3D(gearplane_Pgear(gearplane_in),
+                    clearance=clearance,enlarge=enlarge,bevel=bevel);
+            
+            // upper gearplane
+            dz=gearplane_height(gearplane_in);
+            translate([0,0,dz-overlap])
+            gearplane_planets(gearplane_out)
+                gear_3D(gearplane_Pgear(gearplane_out),
+                    height=dz+overlap,
+                    clearance=clearance,enlarge=enlarge,bevel=bevel);
+        }
+        
+        // axle hole (or lighten)
+        gearplane_planets(gearplane_in)
+            cylinder(d=axle_hole-2*enlarge,h=2.1*(gearplane_height(gearplane_in)+gearplane_height(gearplane_out)),center=true);
+    }
+}
+
 
 

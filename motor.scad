@@ -6,40 +6,9 @@
  Dr. Orion Lawlor, lawlor@alaska.edu, 2022-03-06 (Public Domain)
 */
 
-screw_clearance=0.1;
+include <../AuroraSCAD/screw.scad>;
+
 motor_clearance=0.1;
-
-/*
-machine screw={
-    [0] outside diameter of threads
-    [1] tap diameter of threads
-    [2] outside diameter of head
-    [3] total height of head
-*/
-M3_cap_screw=[3.0,2.5, 5.8,2.7];
-M4_cap_screw=[4.0,3.3, 7.2,3.2];
-QI_cap_screw=[6.4,5.2, 9.6,6.6];
-
-function screw_diameter(type) = type[0];
-function screw_radius(type) = type[0]/2;
-function screw_tap_diameter(type) = type[1];
-function screw_head_diameter(type) = type[2];
-function screw_head_height(type) = type[3];
-
-/* Make a 3D screw model.  The origin is at the base of the head.
-   The screw shaft faces up +Z, the cap faces down -Z.
-   "thru" is the length of the unthreaded portion.
-   "length" is the overall length including thru and tapped portion.
-   "web" is space between head and shaft along Z, a webbing plate used for cleaner bridging
-*/
-module screw_3D(type,clearance=screw_clearance,web=-0.01,thru=0,length=25,extra_head=0) {
-    cylinder(d=screw_tap_diameter(type)+clearance,h=length);
-    cylinder(d=screw_diameter(type)+clearance,h=thru);
-    translate([0,0,-web])
-    scale([1,1,-1])
-        cylinder(d=screw_head_diameter(type)+clearance,h=screw_head_height(type)+extra_head);
-}
-
 
 /*
 motormotor={ 
@@ -112,11 +81,11 @@ module motor_bolt_locations(type,countscale=1)
 }
 
 // Create mounting bolts facing down into this motor.  
-//   +Z is along the motor shaft (opposite the bolts), origin is at the base of the bolts.
+//   +Z is along the motor shaft, origin is at the base of the bolts.
 //   The caps extend by extra_head in Z
 module motor_bolts(type,web=-0.01,clearance=motor_clearance,extra_head=10)
 {
-    motor_bolt_locations(type) rotate([180,0,0])
+    motor_bolt_locations(type) 
         screw_3D(motor_screw(type),thru=10,length=10,clearance=clearance,web=web,extra_head=extra_head);
 }
 
@@ -155,11 +124,30 @@ module motor_face_2D(type,with_boss=1,with_screws=1,with_vents=1)
 }
 
 
+// Solid version of motor shaft (e.g., for gears)
+//  If spin is nonzero, it's a clearance around a spinning shaft.
+module motor_3D_shaft(type,spin=0,web=-0.01,shaft_clearance=0.05,extra_OD=0,extra_Z=0)
+{
+    intersection() {
+        start=motor_boss_length(type)+web;
+        len=motor_shaft_length(type)+extra_Z-start;
+        d=motor_shaft_diameter(type);
+        translate([0,0,start])
+        cylinder(d=d+2*shaft_clearance+spin+extra_OD,h=len);
+        if (spin==0) // include flat on shaft
+            translate([d/2-motor_shaft_flat(type)-shaft_clearance+100,0,0])
+                cube([200,200,200],center=true);
+    }
+}
+
 
 // Make solid version of motor, not including terminals or bolts.
 //  Works like cylinder: shaft sticks up along +Z direction.
 //  Origin is at base of shaft on face plane.
-module motor_3D(type,spin=0,web=-0.01,clearance=motor_clearance,extra_OD=0,extra_Z=0,with_shaft=1,with_boss=1,with_vents=1)
+module motor_3D(type,spin=0,web=-0.01,
+    clearance=motor_clearance,
+    shaft_clearance=0.05,
+    extra_OD=0,extra_Z=0,with_shaft=1,with_boss=1,with_vents=1)
 {
     // motor body (below the face in -Z)
     translate([0,0,0.005])
@@ -171,16 +159,8 @@ module motor_3D(type,spin=0,web=-0.01,clearance=motor_clearance,extra_OD=0,extra
     
     // shaft
     if (with_shaft)
-    intersection() {
-        start=motor_boss_length(type)+web;
-        len=motor_shaft_length(type)+extra_Z-start;
-        d=motor_shaft_diameter(type);
-        translate([0,0,start])
-        cylinder(d=d+spin+extra_OD,h=len);
-        if (spin==0) // include flat on shaft
-            translate([d/2-motor_shaft_flat(type)+100,0,0])
-                cube([200,200,200],center=true);
-    }
+        motor_3D_shaft(type,spin=spin,web=web,shaft_clearance=shaft_clearance,
+        extra_OD=extra_OD,extra_Z=extra_Z);
     
     // vents
     if (with_vents)
