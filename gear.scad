@@ -66,6 +66,7 @@ function geartype_sub(geartype) = geartype[4]*geartype_Cpitch(geartype);
 function gear_create(geartype,nteeth) = [ geartype, nteeth ];
 function gear_geartype(gear) = gear[0];
 function gear_nteeth(gear) = gear[1];
+function gear_height(gear) = geartype_height(gear_geartype(gear));
 
 // Diameter of gear along pitch circle
 function gear_D(gear) = geartype_Dpitch(gear[0])*gear[1];
@@ -300,7 +301,7 @@ module gear_3D(gear,enlarge=0,bevel=1,height=0,clearance=0)
     e2=2*enlarge;
     translate([0,0,-enlarge])
     {
-	    h=(height?height:geartype_height(gear_geartype(gear)))+e2;
+	    h=(height?height:gear_height(gear))+e2;
 	    intersection() {
 		    hull() {
 			    cylinder(d1=gear_ID(gear)+e2,d2=gear_OD(gear)+e2,h=bevel);
