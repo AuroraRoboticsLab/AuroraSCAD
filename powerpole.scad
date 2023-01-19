@@ -36,7 +36,7 @@ function powerpole_pinOD(pp)=pp[6];
 /* Return the pin height (up from base of box) */
 function powerpole_pinheight(pp)=pp[7];
 
-/* Return the wire hole OD */
+/* Return the wire space OD */
 function powerpole_wireOD(pp)=pp[8];
 
 
@@ -57,6 +57,12 @@ module powerpole_key2D(pp) {
             square([2*keydepth,keywidth]);
 }
 
+/* Basic 2D space for wiring pins */
+module powerpole_wire2D(pp) {
+    OD=powerpole_wireOD(pp);
+    square([OD,OD],center=true);
+}
+
 /* 2D cross section through powerpole retention pin holes.
     Needs to be extruded and rotated up 90 degrees along X axis. 
 */
@@ -66,6 +72,14 @@ module powerpole_pin2D(pp,nhole=2) {
     for (hole=[0:nhole-1])
         translate([(hole-0.5)*OD,powerpole_pinheight(pp),0])
             circle(d=pinOD);
+}
+
+// 3D grid of holes for retaining pins
+module powerpole_pins3D(pp,pins,height)
+{
+    rotate([90,0,0])
+    linear_extrude(height=height,center=true,convexity=2*pins)
+        powerpole_pin2D(pp,pins);
 }
 
 /* 2D front section of insets for electrical mating plug */
@@ -109,8 +123,7 @@ module powerpole_3D(pp,wiggle=0.1, pins=2, matinghole=1)
         powerpole_base3D(pp,wiggle);
         
         if (pins)
-        rotate([90,0,0])
-        linear_extrude(height=OD+2*wiggle+0.1,center=true,convexity=2*pins) powerpole_pin2D(pp,pins);
+            powerpole_pins3D(pp,pins,OD+2*wiggle+0.1);
         
         if (matinghole)
         translate([0,0,powerpole_length(pp)+wiggle+0.01])

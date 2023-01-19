@@ -34,13 +34,13 @@ function screw_head_height(type) = type[3];
    "length" is the overall length including thru and tapped portion.
    "web" is space between head and shaft along Z, a webbing plate used for cleaner bridging
 */
-module screw_3D(type,clearance=screw_clearance,web=-0.01,thru=0,length=25,extra_head=0) {
+module screw_3D(type,clearance=screw_clearance,web=-0.01,thru=0,length=25,extra_head=0,head_fn=64) {
     scale([1,1,-1]) {
         cylinder(d=screw_tap_diameter(type)+clearance,h=length);
         cylinder(d=screw_diameter(type)+clearance,h=thru);
     }
     translate([0,0,web])
-        cylinder(d=screw_head_diameter(type)+clearance,h=screw_head_height(type)+extra_head);
+        cylinder($fn=head_fn, d=screw_head_diameter(type)+clearance,h=screw_head_height(type)+extra_head);
 }
 
 
