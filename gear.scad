@@ -303,7 +303,7 @@ module gear_3D(gear,enlarge=0,bevel=1,height=0,clearance=0)
     {
 	    h=(height?height:gear_height(gear))+e2;
 	    intersection() {
-		    hull() {
+		    if (bevel) hull() {
 			    cylinder(d1=gear_ID(gear)+e2,d2=gear_OD(gear)+e2,h=bevel);
 			    translate([0,0,h]) scale([1,1,-1])
 			    cylinder(d1=gear_ID(gear)+e2,d2=gear_OD(gear)+e2,h=bevel);
