@@ -147,7 +147,7 @@ module motor_3D_shaft(type,spin=0,web=-0.01,shaft_clearance=0.05,extra_OD=0,extr
 module motor_3D(type,spin=0,web=-0.01,
     clearance=motor_clearance,
     shaft_clearance=0.05,
-    extra_OD=0,extra_Z=0,with_shaft=1,with_boss=1,with_vents=1)
+    extra_OD=0,extra_Z=0,with_shaft=1,with_boss=1,with_vents=1,vent_ht=10)
 {
     // motor body (below the face in -Z)
     translate([0,0,0.005])
@@ -164,7 +164,7 @@ module motor_3D(type,spin=0,web=-0.01,
     
     // vents
     if (with_vents)
-        linear_extrude(height=10,convexity=4) motor_vents_2D(type);
+        linear_extrude(height=vent_ht,convexity=4) motor_vents_2D(type);
 }
 
 

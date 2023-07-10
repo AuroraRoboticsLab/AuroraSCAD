@@ -17,6 +17,17 @@ module bevelcube(size,bevel,center=false,bz=1)
     }
 }
 
+// Beveled 2D square
+module bevelsquare(size,bevel,center=false)
+{
+    translate(center?[0,0,0]:size/2)
+    hull() {
+        square(size-[2*bevel,0],center=true);
+        square(size-[0,2*bevel],center=true);
+    }
+}
+
+
 // Beveled cylinder
 module bevelcylinder(d,h,bevel,center=false)
 {

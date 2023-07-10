@@ -1,5 +1,6 @@
 /*
-Simple involute gear generator code.
+Simple approximately involute gear generator code.
+Actually only does a low, middle, and high gear tip.
 
 Applications: robot arms, wheels, legs, etc.
 
@@ -16,7 +17,11 @@ General gear design:
 Observations and constraints on planetary gearsets:
 	https://woodgears.ca/gear/planetary.html
 
-Notes on 3D printed gears:	https://engineerdog.com/2017/01/07/a-practical-guide-to-fdm-3d-printing-gears/
+Notes on 3D printed gears:	
+    https://engineerdog.com/2017/01/07/a-practical-guide-to-fdm-3d-printing-gears/
+
+Much fancier (helical, bevel, true involute) library:
+    https://github.com/dpellegr/PolyGear/
 
 */
 $fs=0.1;
@@ -83,7 +88,7 @@ function gear_OR(gear) = gear_OD(gear)/2;
 
 
 
-// Draw one gear
+// Draw one gear, in 2D, with zero clearance.
 module gear_2D(gear) {
 	if (showteeth) {
 		gt=gear_geartype(gear);
@@ -91,8 +96,8 @@ module gear_2D(gear) {
 		OR=gear_OR(gear);
 		nT=gear_nteeth(gear);
 		dT=360/nT; // angle per tooth (degrees)
-		Cpitch=geartype_Cpitch(gt);
-		angle=geartype_pressure(gt);
+		Cpitch=geartype_Cpitch(gt); // circular pitch (one tooth along pressure circle arc)
+		angle=geartype_pressure(gt); // pressure angle (degrees)
 		refR=IR;
 		hO=OR-refR;
 		hM=gear_R(gear)-refR;
@@ -100,7 +105,7 @@ module gear_2D(gear) {
 		tI=Cpitch/4+geartype_sub(gt)*sin(tilt);
 		tM=Cpitch/4;
 		tO=Cpitch/4-geartype_add(gt)*(sin(tilt)+sin(dT));
-		round=0.15*Cpitch;
+		round=0.1*Cpitch;
 		offset(r=-tooth_clearance/2)
 		offset(r=+round) offset(r=-round) // round off inside corners
 		offset(r=-round) offset(r=+round) // round outside corners
@@ -169,6 +174,15 @@ function gearplane_Oradius(gearplane) = gearplane_Sradius(gearplane)+gear_R(gear
 
 // Gear reduction ratio if ring gear is fixed, planet carrier from sun gear.
 function gearplane_ratio_Rfixed(gearplane) = (gearplane_Rteeth(gearplane) + gearplane_Steeth(gearplane)) / gearplane_Steeth(gearplane);
+
+// Print the basic counts of this gearplane:
+module gearplane_print(gearplane,desc="") {
+    echo("Gearplane: ",desc,
+        "  Dpitch ",gearplane_Dpitch(gearplane),
+        "  Sun",gearplane_Steeth(gearplane),
+        "  Planet",gearplane_Pteeth(gearplane),
+        "  Ring",gearplane_Rteeth(gearplane));
+}
 
 
 /*
