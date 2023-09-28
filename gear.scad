@@ -47,6 +47,10 @@ showteeth=true;
 // Geartype for an RS-550 type motor, 0.8P = approx 32 pitch.
 geartype_550 = [ 0.8, 10.0, 20, 0.32, 0.4 ]; 
 
+// Create a typical geartype
+function geartype_create(moduleD, height=10.0, pressure=20.0, addn=0.32, dedn=0.40)
+    = [ moduleD, height, pressure, addn, dedn ];
+
 /// Circular gear pitch = distance between teeth along arc of pitch circle
 function geartype_Cpitch(geartype) = geartype[0]*PI;
 
@@ -346,6 +350,60 @@ module ring_gear_cut(ring,clearance=0.15)
     );
 }
 
+
+/// Make shape to lighten the gear G, leaving space for this axle
+module gear_lighten2D(G,axleOD,wall=2,rib=1,anglestep=60)
+{
+    round=1.5; // round off the rib/circle intersections this much
+    offset(r=+round) offset(r=-round)
+    difference() {
+        // outside circle against teeth
+        circle(d=gear_ID(G)-2*wall);
+        
+        // inside circle leaves space for axle
+        circle(d=axleOD + 2*wall);
+        
+        // Ribs connect axle to outer wall
+        for (side=[-1,+1])
+        for (angle=[anglestep/2:anglestep:360-1]) rotate([0,0,angle+5*side])
+            translate([0,(axleOD+wall)/2,0]) scale([side,1,1])
+                square([gear_OD(G),rib]);
+    }
+}
+
+/// Make a stacked reduction gear with big (bottom) and lil (top)
+module reduction_gear3D(bigG, lilG, axleOD, wall=2, floor=1)
+{
+    bZ=gear_height(bigG);
+    lZ=gear_height(lilG);
+
+    difference() {
+        union() {
+            // big bottom gear, lightened
+            gear_3D(bigG, height=bZ, bevel=1);
+
+            // little top gear sticks above it
+            gear_3D(lilG, height=bZ+lZ, bevel=0);
+            
+            // Leave material above interface to top gear
+            translate([0,0,bZ])
+                cylinder(d1=gear_OD(lilG),d2=gear_ID(lilG),h=1);
+        }
+        
+        // Lighten the big bottom gear
+        difference() {
+            translate([0,0,floor+0.01])
+            linear_extrude(height=bZ-floor,convexity=4)
+                gear_lighten2D(bigG,axleOD,wall);
+            
+            // Leave material below interface to top gear
+            cylinder(d1=axleOD+2,d2=gear_OD(lilG),h=bZ);
+        }
+        
+        // Axle runs through gear center
+        cylinder(d=axleOD,h=100,center=true);
+    }
+}
 
 // Print stepped planet gears as a single piece
 module stepped_planets(gearplane_in,gearplane_out,

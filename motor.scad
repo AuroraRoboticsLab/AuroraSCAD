@@ -23,6 +23,8 @@ motormotor={
     [8] bolthole count
     [9] vent radius delta from bolthole radius (0 for no vents)
     [10] bolt type (symbolic from above)
+    [11] bolt start angle
+    [12] diameter of square box of motor (or 0 for round motor)
 };
 */
 function motor_diameter(type) = type[0];
@@ -36,6 +38,16 @@ function motor_bolthole_radius(type) = type[7]/2;
 function motor_bolthole_count(type) = type[8];
 function motor_vent_delta(type) = type[9];
 function motor_screw(type) = type[10];
+function motor_bolthole_angle(type) = type[11];
+function motor_square(type) = type[12];
+
+// NEMA17 stepper with 5mm shaft
+motortype_NEMA17=[56, 40,
+    25,5.0,4.5, 
+    2.2, 22.3,
+    2*21.9, 4, 
+    0,
+    M3_cap_screw, 45, 42.5];
 
 // 750/775 style heavy brushed with 5mm shaft
 motortype_750=[44.4, 77,
@@ -43,7 +55,7 @@ motortype_750=[44.4, 77,
     4.61, 17.6,
     29, 2, 
     0.5,
-    M4_cap_screw];
+    M4_cap_screw,0,0];
 
 // RS-550 style brushed
 motortype_550=[38.2,74,
@@ -51,7 +63,7 @@ motortype_550=[38.2,74,
     4.5, 13.0,
     25.0,2, 
     -2,
-    M3_cap_screw];
+    M3_cap_screw,0,0];
 
 // Turnigy XK3674 heavy brushless
 motortype_3674=[36,74.3,
@@ -59,7 +71,7 @@ motortype_3674=[36,74.3,
     0,0,
     25,6,
     0,
-    M3_cap_screw];
+    M3_cap_screw,0,0];
 
 // Turnigy XK2845 light brushless
 motortype_2845=[28,46.8,
@@ -67,14 +79,14 @@ motortype_2845=[28,46.8,
     0,0,
     19,2,
     0,
-    M3_cap_screw];
+    M3_cap_screw,0,0];
 
 
 // Call children at the center of each motor bolt
 module motor_bolt_locations(type,countscale=1) 
 {
     count=countscale*motor_bolthole_count(type);
-    for (angle=[0:360/count:360-1])
+    for (angle=[motor_bolthole_angle(type):360/count:360-1])
         rotate([0,0,angle])
             translate([motor_bolthole_radius(type),0,0])
                 children();
@@ -115,7 +127,11 @@ module motor_vents_2D(type)
 module motor_face_2D(type,with_boss=1,with_screws=1,with_vents=1)
 {
     difference() {
-        circle(d=motor_diameter(type));
+        intersection() {
+            circle(d=motor_diameter(type));
+            s=motor_square(type);
+            if (s>0) square([s,s],center=true);
+        }
         
         if (with_boss) circle(d=motor_boss_diameter(type));
         if (with_screws) motor_bolt_locations(type) circle(d=screw_diameter(motor_screw(type)));
@@ -151,7 +167,17 @@ module motor_3D(type,spin=0,web=-0.01,
 {
     // motor body (below the face in -Z)
     translate([0,0,0.005])
-    scale([1,1,-1]) cylinder(d=motor_diameter(type)+clearance+extra_OD,  h=motor_length(type)+extra_Z);
+    scale([1,1,-1]) 
+    intersection() {
+        z=motor_length(type)+extra_Z;
+        cylinder(d=motor_diameter(type)+clearance+extra_OD,  h=z);
+        s=motor_square(type);
+        if (s>0) {
+            s=s+clearance+extra_OD;
+            translate([0,0,z/2])
+                cube([s,s,z],center=true);
+        }
+    }
     
     // boss
     if (with_boss)
