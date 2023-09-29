@@ -148,9 +148,17 @@ module gearbox_frame_shafts(gearbox,len=110,start_stage=0)
 }
 
 // Space for this gear to spin freely
-module gear_clearance(gear,spaceR=1,spaceZ=1) 
+module gear_clearance(gearbig,gearlil,axleOD,spaceR=1,spaceZ=1,undergearZ=1,axleWall=2) 
 {
-    cylinder(r=gear_OR(gear)+spaceR,h=gear_height(gear)+spaceZ);
+    r = gear_OR(gearbig)+spaceR;
+    z = gear_height(gearbig)+spaceZ+gear_height(gearlil);
+
+    difference() {
+        translate([0,0,-undergearZ])
+            cylinder(r=r,h=undergearZ + z + undergearZ);
+        translate([0,0,-undergearZ-0.01]) // don't clear space around axle
+            cylinder(d=axleOD+2*axleWall,h=undergearZ + z + undergearZ+0.02);
+    }
 }
 
 // Clearance for each of these gears to spin freely
@@ -158,10 +166,10 @@ module gearbox_clearance(gearbox,spaceR=1,spaceZ=1)
 {
     for (stage=[0:gearbox_stages(gearbox)-1]) 
     {
-        gearbox_transform(gearbox,stage) {
-            gear_clearance(gearbox_biggear(gearbox,stage),spaceR,spaceZ);
-            //gear_clearance(gearbox_lilgear(gearbox,stage),spaceR,spaceZ);
-        }
+        gearbox_transform(gearbox,stage) 
+            gear_clearance(gearbox_biggear(gearbox,stage),
+                gearbox_lilgear(gearbox,stage),
+                gearbox_axleOD(gearbox,stage),spaceR,spaceZ);
     }
 }
 
@@ -194,7 +202,7 @@ module gearbox_frame(gearbox)
     difference() {
         gearbox_frame_solid(gearbox);
         gearbox_clearance(gearbox);
-        #gearbox_frame_shafts(gearbox);
+        gearbox_frame_shafts(gearbox);
     }
 }
 
