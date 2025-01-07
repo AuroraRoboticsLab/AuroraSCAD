@@ -23,7 +23,7 @@ module gear3D_via_PolyGear(gear,height,bevel=0,clearance=0,$fn=16)
     add=geartype_add(gt)/m - 1;
     ded=geartype_sub(gt)/(m*1.167) - 1; 
     backlash=clearance/m;
-    type=gear_ring(gear)?-1:+1;
+    type=+1; // gear_ring(gear)?-1:+1;
     
     translate([0,0,height/2]) //<- centered for some reason
         spur_gear(
