@@ -21,7 +21,7 @@ gearbox = gearbox_create(
     [ 8, 2.6, 2.6 ],
     
     // Clearances
-    [ 0.2, 1, -1 ]
+    [ 0.1, 1, -1 ]
  );
 
 
