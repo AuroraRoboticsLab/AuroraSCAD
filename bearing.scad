@@ -28,10 +28,15 @@ bearing_3_8 = [ 3/8*inch, 7/8*inch, 9/32*inch ]; // "R6", 3/8" bore, similar to 
 // Babbitt bushings
 bushing_8_10 = [ 8,10,8];
 
+// Narrow ring bearings
+bearing_6704 = [20, 27, 4];
+
 // Ring bearings with a large thru hole
 bearing_6807 = [ 35, 47, 7 ];
 bearing_6808 = [ 40, 52, 7 ]; 
 bearing_6813 = [ 65, 85, 10 ]; 
+bearing_6815 = [ 75, 95, 10 ];
+
 bearing_6013 = [ 65, 100, 18 ]; 
 
 // Needle bearings, for large axial loads
