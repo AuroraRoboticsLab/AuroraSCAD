@@ -321,6 +321,7 @@ module gearplane_2D(gearplane) {
 //    bevel flattens the vertical tips of the teeth
 //    height overrides the gear's vertical height
 //    clearance enlarges (normal gear) or shrinks (ring gear) the teeth in 2D
+// children() get subtracted from gear, like for shafts or keyways or lightening
 module gear_3D(gear,enlarge=0,bevel=1,height=0,clearance=0) 
 {
     e2=2*enlarge;
@@ -334,9 +335,12 @@ module gear_3D(gear,enlarge=0,bevel=1,height=0,clearance=0)
 			    translate([0,0,h]) scale([1,1,-1])
 			    cylinder(d1=gear_ID(gear)+e2,d2=gear_OD(gear)+e2,h=bevel);
 		    }
-		    linear_extrude(height=h,convexity=8)
-		        offset(r=-clear+enlarge)
-			    gear_2D(gear);
+		    difference() {
+		        linear_extrude(height=h,convexity=8)
+		            offset(r=-clear+enlarge)
+			        gear_2D(gear);
+			    children();
+			}
 	    }
 	}
 }
