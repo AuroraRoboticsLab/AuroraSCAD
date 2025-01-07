@@ -123,19 +123,33 @@ module motor_vents_2D(type)
     }
 }
 
+// Positive blank for motor face
+module motor_faceblank_2D(type)
+{
+    intersection() {
+        circle(d=motor_diameter(type));
+        s=motor_square(type);
+        if (s>0) square([s,s],center=true);
+    }
+}
+
+// Negative holes in motor face plate
+module motor_faceholes_2D(type,with_boss=1,with_screws=1,with_vents=1)
+{
+    if (with_boss) {
+        circle(d=motor_boss_diameter(type));
+        circle(d=motor_shaft_diameter(type)+1);
+    }
+    if (with_screws) motor_bolt_locations(type) circle(d=screw_diameter(motor_screw(type)));
+    if (with_vents) motor_vents_2D(type);
+}
+
 // Make 2D version of motor face, with holes for boss, vents, and screws
 module motor_face_2D(type,with_boss=1,with_screws=1,with_vents=1)
 {
     difference() {
-        intersection() {
-            circle(d=motor_diameter(type));
-            s=motor_square(type);
-            if (s>0) square([s,s],center=true);
-        }
-        
-        if (with_boss) circle(d=motor_boss_diameter(type));
-        if (with_screws) motor_bolt_locations(type) circle(d=screw_diameter(motor_screw(type)));
-        if (with_vents) motor_vents_2D(type);
+        motor_faceblank_2D(type);
+        motor_faceholes_2D(type,with_boss,with_screws,with_vents);
     }
 }
 
