@@ -38,6 +38,28 @@ module bevelcylinder(d,h,bevel,center=false)
     }
 }
 
+// Bevel linear extrude convex 2D children into 3D
+module bevel_extrude_convex(height=100,bevel=1,center=false,convexity=2)
+{
+    del=0.01; // thickness of slices
+    
+    translate([0,0,center?-height/2:0])
+    hull()
+    for (step=[
+        /* z, r */
+        [0,bevel],
+        [bevel,0],
+        [height-bevel-del,0],
+        [height-del,bevel]
+    ]
+    )
+    {
+        translate([0,0,step[0]])
+        linear_extrude(height=del,convexity=convexity)
+            offset(r=-step[1])
+                children();
+    }
+}
 
 
 
