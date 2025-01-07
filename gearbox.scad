@@ -37,8 +37,8 @@
 include <gear.scad>; // https://github.com/AuroraRoboticsLab/AuroraSCAD
 
 // Create a gearbox with these arrays, each indexed by the stage. 
-function gearbox_create(geartypes, toothcounts, angles, axleODs, frameODs=axleODs, clearances=[0,1])
-    = [ geartypes, toothcounts, angles, axleODs, frameODs, clearances ];
+function gearbox_create(geartypes, toothcounts, angles, axleODs, frameODs=0, clearances=[0,1])
+    = [ geartypes, toothcounts, angles, axleODs, frameODs?frameODs:axleODs, clearances ];
 
 // Return how many stages this gearbox has:  stage=[0:gearbox_stages(gearbox)-1]
 function gearbox_stages(gearbox) = len(gearbox[0]);
@@ -147,17 +147,35 @@ module gearbox_frame_shafts(gearbox,len=110,start_stage=0)
             cylinder(d=gearbox_frameOD(gearbox,stage),h=len,center=true);
 }
 
-// Space for this gear to spin freely
-module gear_clearance(gearbig,gearlil,axleOD,spaceR=1,spaceZ=1,undergearZ=1,axleWall=2) 
+// Space around the gears of this single gear:
+//    spaceR: space around gear teeth
+//    spaceZ: space above and below gear
+//    undergearZ: height of pivot point where gear spins
+module gear_clearance(gear,spaceR=1,spaceZ=1)
 {
-    r = gear_OR(gearbig)+spaceR;
-    z = gear_height(gearbig)+spaceZ+gear_height(gearlil);
+    r = gear_OR(gear)+spaceR;
+    translate([0,0,-spaceZ])
+        cylinder(r=r, h=spaceZ+gear_height(gear)+spaceZ);
+}
 
+// Space for this reduction gear (big,lil) to spin freely
+//    axleOD: diameter of pivot point where gear spins
+module gears_clearance(gearbig,gearlil,axleOD,spaceR=1,spaceZ=1) 
+{
+    bigZ = gear_height(gearbig);
+    lilZ = gear_height(gearlil);
+    
     difference() {
-        translate([0,0,-undergearZ])
-            cylinder(r=r,h=undergearZ + z + undergearZ);
-        translate([0,0,-undergearZ-0.01]) // don't clear space around axle
-            cylinder(d=axleOD+2*axleWall,h=undergearZ + z + undergearZ+0.02);
+        union() {
+            gear_clearance(gearbig,spaceR,spaceZ);
+            translate([0,0,bigZ])
+                gear_clearance(gearlil,spaceR,spaceZ);        
+        }
+        // Put back the axle pivot points
+        translate([0,0,-spaceZ-0.01])
+            cylinder(d1=axleOD+1,d2=axleOD,h=spaceZ+0.02);
+        translate([0,0,bigZ+lilZ-0.01])
+            cylinder(d1=axleOD,d2=axleOD+1,h=spaceZ+0.02);
     }
 }
 
@@ -167,9 +185,11 @@ module gearbox_clearance(gearbox,spaceR=1,spaceZ=1)
     for (stage=[0:gearbox_stages(gearbox)-1]) 
     {
         gearbox_transform(gearbox,stage) 
-            gear_clearance(gearbox_biggear(gearbox,stage),
+        {
+            gears_clearance(gearbox_biggear(gearbox,stage),
                 gearbox_lilgear(gearbox,stage),
-                gearbox_axleOD(gearbox,stage),spaceR,spaceZ);
+                gearbox_axleOD(gearbox,stage)+3,spaceR,spaceZ);
+        }
     }
 }
 
@@ -225,6 +245,7 @@ module gearbox_draw_all(gearbox,draw_frame=1)
         
     // Reduction gear stages
     stages=gearbox_stages(gearbox);
+    if (stages>1)
     for (stage=[1:stages-1]) 
         gearbox_transform(gearbox,stage)
             gearbox_reduction3D(gearbox,stage);
