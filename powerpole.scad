@@ -10,10 +10,10 @@
 
 /*
  powerpole (pp) structure order:
-    OD of box, length of box overall, mate depth, keydepth, keywidth, keylength, pinOD, pinheight, wireOD
+    OD of box, length of box overall, mate depth, keydepth, keywidth, keylength, pinOD, pinheight, wireOD, matewall
 */
-powerpole_45A=[7.9,24.9, 8.3, 0.5,3.5,12.3, 2.25,14.6, 5.1 ];
-powerpole_75A=[16.1,48, 14.7, 1.0,6.0,26.0, 5.0,29.4, 11.6 ];
+powerpole_45A=[7.9,24.9, 8.3, 0.5,3.5,12.3, 2.25,14.6, 5.1, 0.8 ];
+powerpole_75A=[16.1,48, 14.7, 1.0,6.0,26.0, 5.0,29.4, 11.6, 1.4 ];
 
 /* Return the box outside dimension / pitch of coupler stack (less keying) */
 function powerpole_OD(pp)=pp[0];
@@ -38,6 +38,9 @@ function powerpole_pinheight(pp)=pp[7];
 
 /* Return the wire space OD */
 function powerpole_wireOD(pp)=pp[8];
+
+/* Return the mate hood wall thickness */
+function powerpole_matewall(pp)=pp[9];
 
 
 /* Basic 2D XY section of box, less keying */
@@ -85,7 +88,7 @@ module powerpole_pins3D(pp,pins,height)
 /* 2D front section of insets for electrical mating plug */
 module powerpole_mate2D(pp) {
     OD=powerpole_OD(pp);
-    wall=0.8;
+    wall=powerpole_matewall(pp);
     
     box=[OD+0.3,OD+0.3];
     hole=[OD-2*wall,OD-2*wall];
@@ -129,7 +132,7 @@ module powerpole_3D(pp,wiggle=0.1, pins=2, matinghole=1)
         translate([0,0,powerpole_length(pp)+wiggle+0.01])
             scale([1,1,-1])
                 linear_extrude(height=powerpole_mate(pp)+wiggle,convexity=4)
-                    powerpole_mate2D(pp);
+                    offset(r=+wiggle) powerpole_mate2D(pp);
     }
 }
 
