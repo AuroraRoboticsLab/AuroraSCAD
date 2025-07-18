@@ -93,6 +93,7 @@ function gear_OR(gear) = gear_OD(gear)/2;
 
 
 // Draw one gear, in 2D, with zero clearance.
+//  Children cut holes, like for axle space.
 module gear_2D(gear) {
 	if (showteeth) {
 		gt=gear_geartype(gear);
@@ -110,6 +111,7 @@ module gear_2D(gear) {
 		tM=Cpitch/4;
 		tO=Cpitch/4-geartype_add(gt)*(sin(tilt)+sin(dT));
 		round=0.1*Cpitch;
+		if (nT>0)
 		offset(r=-tooth_clearance/2)
 		offset(r=+round) offset(r=-round) // round off inside corners
 		offset(r=-round) offset(r=+round) // round outside corners
@@ -129,12 +131,16 @@ module gear_2D(gear) {
 							[0,-tI]
 						]);
 			}
-			circle(r=OR);
+			difference() {
+			    circle(r=OR);
+			    children();
+			}
 		}
 	}
 	else
-	{ // no teeth, just pressure circle (much faster)
+	difference() { // no teeth, just pressure circle (much faster)
 		circle(d=gear_D(gear));
+	    children();
 	}
 }
 
@@ -143,7 +149,7 @@ module gear_2D(gear) {
   Planetary gear support.
   One gearplane consists of:
     [0] geartype
-    [1] (S) sun gear tooth count
+    [1] (S) sun gear tooth count (may be negative)
     [2] (P) planet gear tooth count
         (R) ring gear tooth count = S + 2*P
     [3] planet count (number of planet gears, such as 2 or 3 or 10)
@@ -291,7 +297,7 @@ module gearplane_hex_2D(gearplane,rim_thick=4) {
 }
 
 
-// Draw a full plane of gears
+// Draw a full plane of gears.  Children are cut into the sun gear.
 module gearplane_2D(gearplane) {
 	Sgear=gearplane_Sgear(gearplane);
 	Pgear=gearplane_Pgear(gearplane);
@@ -305,7 +311,8 @@ module gearplane_2D(gearplane) {
 	
 	// Sun
 	gearplane_sun(gearplane)
-		gear_2D(Sgear);
+		gear_2D(Sgear)
+		    children();
 	
 	// Planets
 	gearplane_planets(gearplane)
