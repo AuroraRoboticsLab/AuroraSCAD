@@ -24,12 +24,15 @@ bearing_624 = [ 4, 13, 5 ]; // M4 medium bearing
 bearing_606 = [ 6, 17, 5 ]; // M6 medium bearing
 bearing_608 = [ 8, 22, 7 ]; // "skate bearing", also fits 5/16" shaft
 bearing_3_8 = [ 3/8*inch, 7/8*inch, 9/32*inch ]; // "R6", 3/8" bore, similar to 608 outside
+bearing_R8 = [ 1/2*inch, 1.125*inch, 0.3125*inch ]; // "R8", 1/2" bore
 
 // Babbitt bushings
 bushing_8_10 = [ 8,10,8];
 
 // Narrow ring bearings
+bearing_6702 = [15, 21, 4];
 bearing_6704 = [20, 27, 4];
+bearing_6710 = [50, 62, 6];
 
 // Ring bearings with a large thru hole
 bearing_6807 = [ 35, 47, 7 ];
@@ -47,9 +50,13 @@ bearing_5_8_needle = [ 5/8*inch, 13/16*inch, 3/4*inch ]; // 5/8" needle bearing
 
 function bearingID(type) = type[0];
 function bearingOD(type) = type[1];
+function bearingMD(type) = (type[0]+type[1])/2; // mid diameter, center of seal
+
 function bearingZ(type) = type[2];
+
 function bearingIR(type) = type[0]/2;
 function bearingOR(type) = type[1]/2;
+function bearingMR(type) = (type[0]+type[1])/4; // mid radius, center of seal
 
 
 /* Make a 3D bearing model, shaft facing along +Z */
