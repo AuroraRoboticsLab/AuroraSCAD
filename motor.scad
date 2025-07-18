@@ -133,6 +133,11 @@ module motor_faceblank_2D(type)
     }
 }
 
+// Screw hole pattern for motor
+module motor_screwholes_2D(type) {
+    motor_bolt_locations(type) circle(d=screw_diameter(motor_screw(type)));
+}
+
 // Negative holes in motor face plate
 module motor_faceholes_2D(type,with_boss=1,with_screws=1,with_vents=1)
 {
@@ -140,7 +145,7 @@ module motor_faceholes_2D(type,with_boss=1,with_screws=1,with_vents=1)
         circle(d=motor_boss_diameter(type));
         circle(d=motor_shaft_diameter(type)+1);
     }
-    if (with_screws) motor_bolt_locations(type) circle(d=screw_diameter(motor_screw(type)));
+    if (with_screws) motor_screwholes_2D(type);
     if (with_vents) motor_vents_2D(type);
 }
 
