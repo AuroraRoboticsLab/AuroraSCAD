@@ -94,7 +94,7 @@ function gear_OR(gear) = gear_OD(gear)/2;
 
 // Draw one gear, in 2D, with zero clearance.
 //  Children cut holes, like for axle space.
-module gear_2D(gear) {
+module gear_2D(gear,clearance=tooth_clearance/2) {
 	if (showteeth) {
 		gt=gear_geartype(gear);
 		IR=gear_IR(gear);
@@ -112,7 +112,7 @@ module gear_2D(gear) {
 		tO=Cpitch/4-geartype_add(gt)*(sin(tilt)+sin(dT));
 		round=0.1*Cpitch;
 		if (nT>0)
-		offset(r=-tooth_clearance/2)
+		offset(r=-clearance)
 		offset(r=+round) offset(r=-round) // round off inside corners
 		offset(r=-round) offset(r=+round) // round outside corners
 		intersection() {
@@ -279,14 +279,14 @@ module gearplane_planets(gearplane) {
 	}
 }
 
-module gearplane_ring_2D_inside(gearplane) {
-	offset(+tooth_clearance)
+module gearplane_ring_2D_inside(gearplane,clearance=tooth_clearance/2) {
+	offset(+clearance)
 	gear_2D(gearplane_Rgear(gearplane));
 }
-module gearplane_ring_2D(gearplane,rim_thick=4) {
+module gearplane_ring_2D(gearplane,rim_thick=4,clearance=tooth_clearance/2) {
 	difference() {
 		circle(d=rim_thick+gear_OD(gearplane_Rgear(gearplane)));
-		gearplane_ring_2D_inside(gearplane);
+		gearplane_ring_2D_inside(gearplane,clearance=clearance);
 	}
 }
 module gearplane_hex_2D(gearplane,rim_thick=4) {
@@ -298,7 +298,7 @@ module gearplane_hex_2D(gearplane,rim_thick=4) {
 
 
 // Draw a full plane of gears.  Children are cut into the sun gear.
-module gearplane_2D(gearplane) {
+module gearplane_2D(gearplane,clearance=tooth_clearance/2) {
 	Sgear=gearplane_Sgear(gearplane);
 	Pgear=gearplane_Pgear(gearplane);
 	Rgear=gearplane_Rgear(gearplane);
@@ -311,15 +311,15 @@ module gearplane_2D(gearplane) {
 	
 	// Sun
 	gearplane_sun(gearplane)
-		gear_2D(Sgear)
+		gear_2D(Sgear,clearance=clearance)
 		    children();
 	
 	// Planets
 	gearplane_planets(gearplane)
-		gear_2D(Pgear);
+		gear_2D(Pgear,clearance=clearance);
 	
 	// Ring
-	gearplane_ring_2D(gearplane);
+	gearplane_ring_2D(gearplane,clearance=clearance);
 }
 
 
