@@ -21,7 +21,10 @@ bearing={
 bearing_683 = [ 3, 7, 3 ]; // M3 micro bearing
 bearing_623 = [ 3, 10, 4 ]; // M3 medium bearing
 bearing_624 = [ 4, 13, 5 ]; // M4 medium bearing
-bearing_606 = [ 6, 17, 5 ]; // M6 medium bearing
+bearing_625 = [ 5, 16, 5 ]; // M5 medium bearing
+
+bearing_605 = [ 5, 14, 5 ]; // M5 slim bearing
+bearing_606 = [ 6, 17, 5 ]; // M6 slim bearing
 bearing_608 = [ 8, 22, 7 ]; // "skate bearing", also fits 5/16" shaft
 bearing_3_8 = [ 3/8*inch, 7/8*inch, 9/32*inch ]; // "R6", 3/8" bore, similar to 608 outside
 bearing_R8 = [ 1/2*inch, 1.125*inch, 0.3125*inch ]; // "R8", 1/2" bore
@@ -32,6 +35,7 @@ bushing_8_10 = [ 8,10,8];
 // Narrow ring bearings
 bearing_6702 = [15, 21, 4];
 bearing_6704 = [20, 27, 4];
+bearing_6706 = [30, 37, 4];
 bearing_6710 = [50, 62, 6];
 
 // Ring bearings with a large thru hole
