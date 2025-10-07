@@ -14,6 +14,7 @@
 // These seem to be OK on my Replicator 1
 FUDGE_BORE=0;	 // mm to fudge the edges of the bore
 FUDGE_ROLLER=0; // mm to fudge the hole for the rollers
+FUDGE_THICK=0.98; // fraction of nominal thickness to actually print
 FUDGE_TEETH=1.5;  // Additional taper of the top teeth (0 is theoretical,
                 // my rep 1 seems to need 1 on medium.)
 FUDGE_ROUND=1.5; // mm of rounding on tooth tips
@@ -23,13 +24,13 @@ function mm2inches(mm) = mm / 25.4;
 
 module sprocket(size=25, teeth=9, bore_radius_mm=inches2mm(5/16)/2)
 {
-	thickness=inches2mm(get_thickness(size));
-
+	thickness=get_thickness_mm(size);
+	
     linear_extrude(height=thickness,convexity=8)
     difference() {
         sprocket_plate2D(size, teeth);
         
-        if (bore != 0)
+        if (bore_radius_mm > 0)
         {
             circle(r=bore_radius_mm+FUDGE_BORE);
         }
@@ -38,31 +39,29 @@ module sprocket(size=25, teeth=9, bore_radius_mm=inches2mm(5/16)/2)
     }
 }
 
-// Look up the outside radius for this many teeth
-function get_outside_radius(size,teeth) = 
-    inches2mm(get_pitch(size)*(0.6+1/tan(180/teeth))) / 2;
+// Look up the outside radius (mm) for this many teeth
+function get_outside_radius_mm(size,teeth) = 
+    inches2mm(get_pitch_inch(size)*(0.6+1/tan(180/teeth))) / 2;
 
-// Look up the pitch radius for this many teeth
-function get_pitch_radius(size,teeth) =
-    inches2mm(get_pitch(size)/sin(180/teeth)) / 2;
+// Look up the pitch radius (mm) for this many teeth
+function get_pitch_radius_mm(size,teeth) =
+    inches2mm(get_pitch_inch(size)/sin(180/teeth)) / 2;
 
 // Make a 2D sprocket shape with this size (e.g., 40 for #40 roller chain) and tooth count.
 //   Center is solid, use a difference to cut in the boreway
 module sprocket_plate2D(size, teeth, verbose=0)
 {
 	angle = 360/teeth;
-	pitch=inches2mm(get_pitch(size));
-	roller=inches2mm(get_roller_diameter(size)/2);
-	outside_radius = get_outside_radius(size,teeth);
-	pitch_radius = get_pitch_radius(size,teeth);
+	pitch=inches2mm(get_pitch_inch(size));
+	roller=inches2mm(get_roller_diameter_inch(size)/2);
+	outside_radius = get_outside_radius_mm(size,teeth);
+	pitch_radius = get_pitch_radius_mm(size,teeth);
 
     if (verbose) {
         echo("Pitch=", mm2inches(pitch));
         echo("Pitch mm=", pitch);
         echo("Roller=", mm2inches(roller));
         echo("Roller mm=", roller);
-        echo("Thickness=", mm2inches(thickness));
-        echo("Thickness mm=", thickness);
 
         echo("Outside diameter=", mm2inches(outside_radius * 2));
         echo("Outside diameter mm=", outside_radius * 2);
@@ -134,7 +133,7 @@ module sprocket_plate2D(size, teeth, verbose=0)
 }
 
 // Return inch pitch
-function get_pitch(size) =
+function get_pitch_inch(size) =
 	// ANSI
 	size == 25 ? 1/4 :
 	size == 35 ? 3/8 :
@@ -158,7 +157,7 @@ function get_pitch(size) =
 	0;
 
 // Return inch roller diameter
-function get_roller_diameter(size) =
+function get_roller_diameter_inch(size) =
 	// ANSI
 	size == 25 ? .130 :
 	size == 35 ? .200 :
@@ -181,10 +180,12 @@ function get_roller_diameter(size) =
 	// unknown
 	0;
 
-// Return inch thickness of plate
+// Return mm thickness of plate, including slimming
+function get_thickness_mm(size) = FUDGE_THICK * inches2mm(get_thickness_inch(size));
+
 // I think there's a formula for this, but by the
 // time I realized that I already had the table...
-function get_thickness(size) =
+function get_thickness_inch(size) =
 	// ANSI
 	size == 25 ? .110 :
 	size == 35 ? .168 :
