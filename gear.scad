@@ -94,13 +94,13 @@ function gear_OR(gear) = gear_OD(gear)/2;
 
 // Draw one gear, in 2D, with zero clearance.
 //  Children cut holes, like for axle space.
-module gear_2D(gear,clearance=tooth_clearance/2) {
+module gear_2D(gear,clearance=tooth_clearance/2, numteeth = 0) {
 	if (showteeth) {
 		gt=gear_geartype(gear);
 		IR=gear_IR(gear);
 		OR=gear_OR(gear);
-		nT=gear_nteeth(gear);
-		dT=360/nT; // angle per tooth (degrees)
+		nT = numteeth?numteeth:gear_nteeth(gear);
+		dT=360/gear_nteeth(gear); // angle per tooth (degrees)
 		Cpitch=geartype_Cpitch(gt); // circular pitch (one tooth along pressure circle arc)
 		angle=geartype_pressure(gt); // pressure angle (degrees)
 		refR=IR;
