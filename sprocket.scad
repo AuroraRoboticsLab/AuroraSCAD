@@ -13,10 +13,11 @@
 // Adjust these if it's too tight/loose on your printer,
 // These seem to be OK on my Replicator 1
 FUDGE_BORE=0;	 // mm to fudge the edges of the bore
-FUDGE_ROLLER=0; // mm to fudge the hole for the rollers
+FUDGE_ROLLER=0.0; // mm to fudge the hole for the rollers
 FUDGE_THICK=0.98; // fraction of nominal thickness to actually print
-FUDGE_TEETH=1.5;  // Additional taper of the top teeth (0 is theoretical,
-                // my rep 1 seems to need 1 on medium.)
+FUDGE_TEETH=0.0;  // Additional taper of the teeth
+FUDGE_TEETH_TIP=0.0; // mm to trim back the tips of the teeth
+  
 FUDGE_ROUND=1.5; // mm of rounding on tooth tips
                 
 function inches2mm(inches) = inches * 25.4;
@@ -51,11 +52,11 @@ function get_pitch_radius_mm(size,teeth) =
 //   Center is solid, use a difference to cut in the boreway
 module sprocket_plate2D(size, teeth, verbose=0)
 {
-	angle = 360/teeth;
-	pitch=inches2mm(get_pitch_inch(size));
-	roller=inches2mm(get_roller_diameter_inch(size)/2);
+	angle = 360/teeth; // angular distance between rollers
+	pitch=inches2mm(get_pitch_inch(size)); // distance between roller centers
+	roller=inches2mm(get_roller_diameter_inch(size)/2); // radius of roller
 	outside_radius = get_outside_radius_mm(size,teeth);
-	pitch_radius = get_pitch_radius_mm(size,teeth);
+	pitch_radius = get_pitch_radius_mm(size,teeth); // distance from axle to roller centers
 
     if (verbose) {
         echo("Pitch=", mm2inches(pitch));
@@ -69,11 +70,8 @@ module sprocket_plate2D(size, teeth, verbose=0)
         echo("Pitch Diameter mm=", pitch_radius * 2);
     }
     
+    // Radius to middle of teeth
 	middle_radius = sqrt(pow(pitch_radius,2) - pow(pitch/2,2));
-
-	// rotating the fudge is going to put curves in a funny place
-	fudge_teeth_x = FUDGE_TEETH * cos(angle/2);
-	fudge_teeth_y = FUDGE_TEETH * sin(angle/2);
 
     offset(r=+FUDGE_ROUND) offset(r=-FUDGE_ROUND)
 	difference()
@@ -85,8 +83,8 @@ module sprocket_plate2D(size, teeth, verbose=0)
 
 			intersection()
 			{
-//				cylinder(r=outside_radius,h=thickness+2);	//logic for shorter teeth
-				circle(r=pitch_radius-roller+pitch/2);
+                // Trim outer tooth tips
+				circle(r=pitch_radius-roller+pitch/2-FUDGE_TEETH_TIP);
 
 				// Main section
 				union()
@@ -96,19 +94,19 @@ module sprocket_plate2D(size, teeth, verbose=0)
 					{
 						// Rotate current sprocket by angle
 						rotate([0,0,angle*sprocket])
-						intersection()
 						{
-							translate([-fudge_teeth_x,pitch_radius-fudge_teeth_y,0])
-							circle(r=pitch-roller-FUDGE_ROLLER-FUDGE_TEETH);
-	
-							rotate([0,0,angle])
-							translate([fudge_teeth_x,pitch_radius-fudge_teeth_y,0])
-							circle(r=pitch-roller-FUDGE_ROLLER-FUDGE_TEETH);					
+						    // The logic for tooth tips: the roller for the next segment needs to be free to swing over our tooth tip
+						        intersection_for (side=[0,+1]) rotate([0,0,angle*side])
+						            translate([0,pitch_radius])
+						                circle(r=pitch-roller-FUDGE_ROLLER-FUDGE_TEETH);
+						    
 						}
 					}
 
-					// Make sure to fill the gap in the bottom
-					for (sprocket=[0:teeth-1])
+                    circle(r=middle_radius); //<- simpler (might leave tiny corners)
+                
+					// Fill the gap in the bottom
+					if (0) for (sprocket=[0:teeth-1])
 					{
 						rotate([0,0,angle*sprocket-angle/2])
 						translate([-pitch/2,-.01,0])
@@ -122,7 +120,7 @@ module sprocket_plate2D(size, teeth, verbose=0)
 		for (sprocket=[0:teeth-1])
 		{
 			rotate([0,0,angle*sprocket])
-			translate([0,pitch_radius,-1])
+			translate([0,pitch_radius])
 			circle(r=roller+FUDGE_ROLLER);
 		}
 	}
