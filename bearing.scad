@@ -32,6 +32,10 @@ bearing_R8 = [ 1/2*inch, 1.125*inch, 0.3125*inch ]; // "R8", 1/2" bore
 // Babbitt bushings
 bushing_8_10 = [ 8,10,8];
 
+// Deep groove compact
+bearing_MR105 = [5,10,4];
+bearing_MR128 = [8,12,3.5];
+
 // Narrow ring bearings
 bearing_6702 = [15, 21, 4];
 bearing_6704 = [20, 27, 4];
@@ -64,9 +68,10 @@ function bearingMR(type) = (type[0]+type[1])/4; // mid radius, center of seal
 
 
 /* Make a 3D bearing model, shaft facing along +Z */
-module bearing3D(type,clearance=bearing_clearance,hole=1,support=0,web=0,extraZ=0) 
+module bearing3D(type,clearance=bearing_clearance,hole=1,support=0,web=0,extraZ=0,center=false) 
 {
     z=bearingZ(type) + extraZ;
+    translate([0,0,center?-bearingZ(type)/2:0])
     difference() {
         cylinder(d=bearingOD(type)+clearance,h=z);
         if (hole) { // thru hole
