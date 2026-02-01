@@ -29,16 +29,16 @@ module bevelsquare(size,bevel,center=false)
 
 
 // Beveled cylinder
-module bevelcylinder(d,h,bevel,center=false)
+module bevelcylinder(d,h,bevel,center=false,$fn=0)
 {
     translate(center?[0,0,0]:[0,0,h/2])
     hull() {
-        cylinder(d=d-2*bevel,h=h,center=true);
-        cylinder(d=d,h=h-2*bevel,center=true);
+        cylinder(d=d-2*bevel,h=h,center=true,$fn=$fn);
+        cylinder(d=d,h=h-2*bevel,center=true,$fn=$fn);
     }
 }
 
-// Bevel linear extrude convex 2D children into 3D
+// Bevel linear extrude convex 2D children into 3D (uses hull, so only convex works)
 module bevel_extrude_convex(height=100,bevel=1,center=false,convexity=2)
 {
     del=0.01; // thickness of slices
@@ -61,5 +61,13 @@ module bevel_extrude_convex(height=100,bevel=1,center=false,convexity=2)
     }
 }
 
+// Bevel linear extrude non-convex 2D children into 3D (only bevels outside corners though)
+module bevel_extrude_outside(height=100,bevel=1,center=false,convexity=2)
+{
+    intersection() {
+        bevel_extrude_convex(height,bevel,center,convexity) children();
+        linear_extrude(height,center=center,convexity=convexity) children();
+    }
+}
 
 
